@@ -1,0 +1,67 @@
+--Source: https://www.kaggle.com/datasets/cbxkgl/uefa-champions-league-2016-2022-data
+--Queried using: SQLite
+
+--Checking IDs of players in question 
+select player_id, first_name, last_name
+from CL_players
+where 
+last_name IN ("Lewandowski", "Benzema", "Messi")
+
+--How did Karim Benzema scored his goals?
+select p.first_name, p.last_name, g.goal_desc, count(g.goal_desc) as number from CL_players p
+JOIN CL_goals g ON g.PID = p.Player_id
+WHERE player_id = "ply831"
+group by g.goal_desc
+
+--2018-19 UEFA CL best scorers
+select CLG.PID, CLP.first_name, CLP.last_name, count(PID) as goals from CL_goals CLG
+join CL_matches CLM on CLG.match_ID = CLM.match_ID
+join CL_players CLP on CLG.PID = CLP.Player_id
+where season = '2018-2019'
+group by PID
+order by goals desc
+
+--How many goals scored Robert Lewadowski in each season between 2016-2022?
+select CLM.season, CLG.PID, CLP.first_name, CLP.last_name, count(PID) from CL_goals CLG
+join CL_matches CLM on CLG.match_ID = CLM.match_ID
+join CL_players CLP on CLG.PID = CLP.Player_id
+where PID = 'ply398'
+group by season;
+
+--R. Lewadowski vs Lionel Messi - goals each season
+WITH CTE_messi
+as (
+select CLM.season, CLG.PID, CLP.first_name, CLP.last_name, count(CLG.PID) as messi_goals from CL_goals CLG
+join CL_matches CLM on CLG.match_ID = CLM.match_ID
+join CL_players CLP on CLG.PID = CLP.Player_id
+where PID = 'ply740'
+group by CLM.season),
+
+CTE_lewy as
+(select CLM.season, CLG.PID, CLP.first_name, CLP.last_name, count(CLG.PID) as lewy_goals from CL_goals CLG
+join CL_matches CLM on CLG.match_ID = CLM.match_ID
+join CL_players CLP on CLG.PID = CLP.Player_id
+where PID = 'ply398'
+group by CLM.season)
+
+select CTE_lewy.season, CTE_lewy.last_name, CTE_lewy.lewy_goals, CTE_messi.season, CTE_messi.last_name, CTE_messi.messi_goals, CTE_lewy.lewy_goals - CTE_messi.messi_goals as diff
+from CTE_lewy
+join CTE_messi on CTE_lewy.season = CTE_messi.season
+group by CTE_lewy.season;
+
+--When did each player score his earliest and latest goal and against which team?
+select min(G.duration) as goal_time, P.last_name, M.home_team, M.away_team
+from CL_goals G
+join CL_players P on G.PID = P.player_id
+join CL_matches M on G.match_id = M.match_id
+where PID IN ("ply831", "ply398", "ply740")
+group by PID
+order by duration desc;
+
+select max(G.duration) as goal_time, P.last_name, M.home_team, M.away_team
+from CL_goals G
+join CL_players P on G.PID = P.player_id
+join CL_matches M on G.match_id = M.match_id
+where PID IN ("ply831", "ply398", "ply740")
+group by PID
+order by duration desc;
