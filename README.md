@@ -1,1 +1,1 @@
-# SQL_Portfolio
+Thanks for stopping by. In this repository you can find my solo projects written to practice SQL after completing some data analytics courses. I will be constantly updating this repository and my profile in general as there are still many project ideas in my head. Feel free to take a look around and reach out if you have any feedback or questions.
