@@ -1,0 +1,29 @@
+--Source: https://www.kaggle.com/datasets/neuromusic/avocado-prices
+--Queried using: SQLite
+
+--Sales in 2015 by region
+select strftime('%Y', date) as YEAR, region, round(avg(total_volume), 1) as total_vol
+    from avocado
+    where YEAR = '2015'
+    group by region
+    order by total_vol desc
+
+--Avocado sales results in Columbus in each month of 2015 and it's comparision with with previous mont
+select strftime('%Y', date) as YEAR, strftime('%m', date) as MONTH, region, round(sum(total_volume), 2) as month_amount, 
+LAG(round(sum(total_volume), 2), 1, 0) OVER(order by strftime('%m', date)) as prev_month,
+round(round(sum(total_volume), 2) - LAG(round(sum(total_volume), 2), 1, 0) OVER(order by strftime('%m', date)), 2) as difference,
+round(100*((round(sum(total_volume), 2)) - LAG(round(sum(total_volume), 2), 1, 0) OVER(order by strftime('%m', date))) / LAG(round(sum(total_volume), 2), 1, 0) 
+OVER(order by strftime('%m', date)), 1) as Percentage
+    from avocado
+    where YEAR = '2015' and
+    region = 'Columbus'
+    group by MONTH;
+    
+--ranking of regions with best avocado sales in US in october of 2015
+select year, strftime('%m', date) as MONTH, total_volume, region, round(sum(total_volume)/1000, 2) as volume_MT, 
+rank() over(order by round(sum(total_volume)/1000, 2) DESC) as rank
+from avocado
+where year = '2016' and
+strftime('%m', date) = '10' and
+region <> 'TotalUS'
+group by region;
