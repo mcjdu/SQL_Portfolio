@@ -1,0 +1,72 @@
+CREATE TABLE Futbol (
+    Date       DATE,
+    home_team  VARCHAR (40),
+    away_team  VARCHAR (40),
+    home_score INTEGER (2),
+    away_score INTEGER (2),
+    tournament VARCHAR (100),
+    city       VARCHAR (40),
+    country    VARCHAR (40),
+    neutral    VARCHAR (10) 
+);
+
+create view results_poland_since2001 as
+select *, home_score ||':'|| away_score as 'result',
+CASE
+when home_score > away_score THEN 'win'
+when home_score = away_score THEN 'draw'
+else 'loss'
+END score from all_results
+where date > '2001-01-01'
+and home_team = 'Poland'
+and tournament <> 'Friendly';
+
+ CREATE TABLE Goalscorers (
+    Date       DATE,
+    home_team  VARCHAR (40),
+    away_team  VARCHAR (40),
+    team       VARCHAR (40),
+    scorer     VARCHAR (40),
+    minute     integer (3),
+    own_goal   VARCHAR (5),
+    penalty    VARCHAR (5)
+); 
+
+--Goals of K. Deyna for Poland
+select f.date, f.home_team, f.away_team, g.team, g.scorer
+from Futbol F
+join Goalscorers G on F.date = G.date
+where G.scorer = 'Kazimierz Deyna';
+K. Deyna exact number of goals for Poland
+
+WITH Deyna_cte AS
+(
+select f.date, f.home_team, f.away_team, g.team, g.scorer
+from Futbol F
+join Goalscorers G on F.date = G.date
+where G.scorer = 'Kazimierz Deyna'
+)
+select count (*)
+from Deyna_cte;
+
+--2018 FIFA WC goals
+select (sum(away_score) + sum(home_score)) as tournament_goals
+from Futbol
+where tournament = 'FIFA World Cup' and
+date between '2018-01-01' and '2018-12-12';
+
+--Matches with highest goals number
+select *, away_score + home_score as goals_in_match
+from Futbol
+where tournament = 'FIFA World Cup' and
+date between '2018-01-01' and '2018-12-12'
+order by goals_in_match desc limit 5;
+
+--FIFA WC 2018 top scorers
+select scorer, count (*) as goals, own_goal
+from goalscorers
+where date between '2018-06-14' and '2018-07-15'
+and own_goal = 'FALSE'
+group by scorer
+having goals >= 3
+order by goals desc;
