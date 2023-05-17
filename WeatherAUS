@@ -1,0 +1,101 @@
+Tool: SQLite
+Data source: https://www.kaggle.com/datasets/arunavakrchakraborty/australia-weather-data
+
+-- checking all locations with weather data
+select distinct location
+from weather;
+
+--Checking the heatiest region in Novmeber 2011
+select strftime('%Y', date) as Year, strftime('%m', date) as Month, location, round((MinTemp + MaxTemp + Temp9am + Temp3pm)/4, 1) as avgTemp
+from weather
+where strftime('%Y', date) = '2011' and
+strftime('%m', date) = '11'
+group by location
+order by avgTemp desc;
+
+--checking weather in each region on 28-12-2015
+select strftime('%Y', date) as Year, strftime('%m', date) as Month, strftime('%d', date) as day, location, (WindSpeed9am + WindSpeed3pm)/2 as windSpeed,
+CASE 
+WHEN (WindSpeed9am + WindSpeed3pm)/2 > 30 THEN 'Strong wind'
+WHEN (WindSpeed9am + WindSpeed3pm)/2 between 15 and 30 THEN 'Windy'
+WHEN (WindSpeed9am + WindSpeed3pm)/2 between 5 and 14 THEN 'Light Wind'
+ELSE 'No wind'
+END WIND,
+CASE 
+WHEN (Temp9am + Temp3pm)/2 > 35 THEN 'Extremely hot'
+WHEN (Temp9am + Temp3pm)/2 BETWEEN 30 and 35 THEN 'Hot'
+WHEN (Temp9am + Temp3pm)/2 BETWEEN 20 AND 29 THEN 'warm'
+WHEN (Temp9am + Temp3pm)/2 BETWEEN 10 and 19 THEN 'Regular'
+ELSE 'Cold'
+END TEMPERATURE
+from weather
+where strftime('%Y', date) = '2015' and
+strftime('%m', date) = '12' and
+strftime('%d', date) = '28'
+group by location;
+
+--Checking which region was the best for a walk on 28-12-2015
+WITH
+CTE_WEATHERTYPE
+AS
+(
+select strftime('%Y', date) as Year, strftime('%m', date) as Month, strftime('%d', date) as day, location, (WindSpeed9am + WindSpeed3pm)/2 as windSpeed,
+CASE 
+WHEN (WindSpeed9am + WindSpeed3pm)/2 > 30 THEN 'Strong wind'
+WHEN (WindSpeed9am + WindSpeed3pm)/2 between 15 and 30 THEN 'Windy'
+WHEN (WindSpeed9am + WindSpeed3pm)/2 between 5 and 14 THEN 'Light Wind'
+ELSE 'No wind'
+END WIND,
+CASE 
+WHEN (Temp9am + Temp3pm)/2 > 35 THEN 'Extremely hot'
+WHEN (Temp9am + Temp3pm)/2 BETWEEN 30 and 35 THEN 'Hot'
+WHEN (Temp9am + Temp3pm)/2 BETWEEN 20 AND 29 THEN 'warm'
+WHEN (Temp9am + Temp3pm)/2 BETWEEN 10 and 19 THEN 'Regular'
+ELSE 'Cold'
+END TEMPERATURE
+from weather
+where strftime('%Y', date) = '2015' and
+strftime('%m', date) = '12' and
+strftime('%d', date) = '28'
+group by location)
+select Location, WIND, TEMPERATURE, 
+case 
+WHEN wind IN ('Light Wind', 'No wind') AND
+TEMPERATURE IN ('warm', 'Regular') THEN 'OK'
+ELSE 'Not OK'
+END Walk
+from CTE_WEATHERTYPE;
+
+--Min and max temperature in each region in 2010 and the difference between both
+select Date, location, Max(MaxTemp) as Max_Temperature, Min(MinTemp) as Min_Temperature, round((Max(MaxTemp) - Min(MinTemp)), 1) as diff
+from weather
+where MaxTemp <> '' and
+Date between '2010-01-01' and '2010-12-31'
+group by strftime('%Y', date), location
+order by diff desc;
+
+--hottest day each year and location
+select Date, strftime('%Y', date) as year, location, Max(MaxTemp) as Max_Temperature
+from weather
+where MaxTemp <> ''
+group by strftime('%Y', date);
+
+--the rainiest locations in 2011
+select location, round(sum(Rainfall)/100,1) as Rain_in_m3
+from weather
+where strftime('%Y', date) = '2011'
+group by location
+order by Rain_in_m3 desc;
+
+--checking the rainiest day in 2010
+select date, max(Rainfall)
+from weather
+where strftime('%Y', date) = '2010';
+
+--how many days were more rainy than the rainiest day in 2010?
+select date, location, rainfall
+from weather
+where rainfall > 
+(select max(Rainfall)
+from weather
+where strftime('%Y', date) = '2010');
